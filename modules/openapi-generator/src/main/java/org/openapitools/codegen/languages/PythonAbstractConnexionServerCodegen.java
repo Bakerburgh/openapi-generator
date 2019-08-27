@@ -853,6 +853,7 @@ public class PythonAbstractConnexionServerCodegen extends DefaultCodegen impleme
         for (CodegenProperty prop : model.allVars) {
             if (prop.name.equals(name)) {
                 prop.discriminatorValue = value;
+                prop.defaultValue = value;
             }
         }
         if (model.children != null) {
