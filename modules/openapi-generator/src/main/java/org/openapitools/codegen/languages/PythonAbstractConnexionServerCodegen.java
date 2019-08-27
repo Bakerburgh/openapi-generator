@@ -45,6 +45,7 @@ import static org.openapitools.codegen.utils.StringUtils.underscore;
 public class PythonAbstractConnexionServerCodegen extends DefaultCodegen implements CodegenConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger(PythonAbstractConnexionServerCodegen.class);
 
+    private static final String X_DISCRIMINATOR_TYPE = "x-discriminator-value";
     public static final String CONTROLLER_PACKAGE = "controllerPackage";
     public static final String DEFAULT_CONTROLLER = "defaultController";
     public static final String SUPPORT_PYTHON2 = "supportPython2";
@@ -835,12 +836,39 @@ public class PythonAbstractConnexionServerCodegen extends DefaultCodegen impleme
             List<Map<String, Object>> models = (List<Map<String, Object>>) inner.get("models");
             for (Map<String, Object> mo : models) {
                 CodegenModel cm = (CodegenModel) mo.get("model");
+                if (cm.discriminator != null && cm.children != null) {
+                    for (CodegenModel child : cm.children) {
+                        this.setDiscriminatorValue(child, cm.discriminator.getPropertyName(), this.getDiscriminatorValue(child));
+                    }
+                }
+
                 // Add additional filename information for imports
                 mo.put("pyImports", toPyImports(cm, cm.imports));
             }
         }
         return result;
     }
+
+    private void setDiscriminatorValue(CodegenModel model, String name, String value) {
+        for (CodegenProperty prop : model.allVars) {
+            if (prop.name.equals(name)) {
+                prop.discriminatorValue = value;
+            }
+        }
+        if (model.children != null) {
+            final boolean newDiscriminator = model.discriminator != null;
+            for (CodegenModel child : model.children) {
+                this.setDiscriminatorValue(child, name, newDiscriminator ? value : this.getDiscriminatorValue(child));
+            }
+        }
+    }
+
+    private String getDiscriminatorValue(CodegenModel model) {
+        return model.vendorExtensions.containsKey(X_DISCRIMINATOR_TYPE) ?
+                (String) model.vendorExtensions.get(X_DISCRIMINATOR_TYPE) : model.classname;
+    }
+
+
 
     private List<Map<String, String>> toPyImports(CodegenModel cm, Set<String> imports) {
         List<Map<String, String>> pyImports = new ArrayList<>();
