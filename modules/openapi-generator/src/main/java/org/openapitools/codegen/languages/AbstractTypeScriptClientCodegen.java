@@ -337,7 +337,8 @@ public abstract class AbstractTypeScriptClientCodegen extends DefaultCodegen imp
             return this.getSchemaType(p) + "<" + this.getParameterDataType(parameter, inner) + ">";
         } else if (ModelUtils.isMapSchema(p)) {
             inner = ModelUtils.getAdditionalProperties(p);
-            return "{ [key: string]: " + this.getParameterDataType(parameter, inner) + "; }";
+//            return "{ [key: string]: " + this.getParameterDataType(parameter, inner) + "; }";
+            return "FOOOOOOOOOOOOOOOOOoooooooooooooooooooooo";
         } else if (ModelUtils.isStringSchema(p)) {
             // Handle string enums
             if (p.getEnum() != null) {
