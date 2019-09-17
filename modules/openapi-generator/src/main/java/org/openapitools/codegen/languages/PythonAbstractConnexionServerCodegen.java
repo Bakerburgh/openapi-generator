@@ -40,6 +40,7 @@ import java.io.File;
 import java.util.*;
 
 import static org.openapitools.codegen.utils.StringUtils.camelize;
+import static org.openapitools.codegen.utils.StringUtils.escape;
 import static org.openapitools.codegen.utils.StringUtils.underscore;
 
 public class PythonAbstractConnexionServerCodegen extends DefaultCodegen implements CodegenConfig {
@@ -101,6 +102,8 @@ public class PythonAbstractConnexionServerCodegen extends DefaultCodegen impleme
         // from https://docs.python.org/3/reference/lexical_analysis.html#keywords
         setReservedWordsLowerCase(
                 Arrays.asList(
+                		// JCT Custom Reserved Words
+                		"id", "type",
                         // @property
                         "property",
                         // python reserved words
@@ -816,6 +819,11 @@ public class PythonAbstractConnexionServerCodegen extends DefaultCodegen impleme
 
     @Override
     public void postProcessModelProperty(CodegenModel model, CodegenProperty property) {
+    	if (property.name.startsWith("_")) {
+    		property.setName(model.classVarName + property.name);
+    	}
+    	
+    	
         if (StringUtils.isNotEmpty(property.pattern)) {
             addImport(model, "import re");
         }
@@ -828,20 +836,89 @@ public class PythonAbstractConnexionServerCodegen extends DefaultCodegen impleme
         return postProcessModelsEnum(objs);
     }
 
+    private void jctCustomFixes(CodegenProperty var, CodegenModel inClass, Map<String, CodegenModel> allModels) {
+    	if (var.name.startsWith("_")) {
+    		var.setName(inClass.classVarName + var.name);
+    	}
+    	
+    	if (allModels.containsKey(var.baseType)) {
+    		CodegenModel type = allModels.get(var.baseType);
+    		if (type.isArrayModel) {
+    			var.isListContainer = true;
+    		}
+    		if (type.isMapModel) {
+    			var.isMapContainer = true;
+    		}
+    	}
+    }
+
+    /**
+     * Sets the child property's isInherited flag to true if it is an inherited
+     * property
+     */
+    private void processParentPropertiesInChildModel(final CodegenModel parent, final CodegenModel child) {
+        final Map<String, CodegenProperty> childPropertiesByName = new HashMap<>(child.vars.size());
+        final Map<String, CodegenProperty> allChildPropertiesByName = new HashMap<>(child.vars.size());
+        for (final CodegenProperty childProperty : child.vars) {
+            childPropertiesByName.put(childProperty.name, childProperty);
+        }
+        for (final CodegenProperty childProperty : child.allVars) {
+        	allChildPropertiesByName.put(childProperty.name, childProperty);
+        }
+        if (parent != null) {
+            for (final CodegenProperty parentProperty : parent.vars) {
+                final CodegenProperty duplicatedByParent = childPropertiesByName.get(parentProperty.name);
+                if (duplicatedByParent != null) {
+                    duplicatedByParent.isInherited = true;
+                }
+            }
+            for (final CodegenProperty parentProperty : parent.allVars) {
+                final CodegenProperty duplicatedByParent = allChildPropertiesByName.get(parentProperty.name);
+                if (duplicatedByParent != null) {
+                    duplicatedByParent.isInherited = true;
+                }
+            }
+        }
+    }
+    
     @Override
     public Map<String, Object> postProcessAllModels(Map<String, Object> objs) {
         Map<String, Object> result = super.postProcessAllModels(objs);
+
+        Map<String, CodegenModel> allModels = new HashMap<String, CodegenModel>();
+        
+        for (Map.Entry<String, Object> entry : result.entrySet()) {
+            Map<String, Object> inner = (Map<String, Object>) entry.getValue();
+            List<Map<String, Object>> models = (List<Map<String, Object>>) inner.get("models");
+            for (Map<String, Object> mo : models) 
+            {
+            	CodegenModel m = (CodegenModel) mo.get("model");
+            	allModels.put(m.name, m);
+            }
+        }
+        
         for (Map.Entry<String, Object> entry : result.entrySet()) {
             Map<String, Object> inner = (Map<String, Object>) entry.getValue();
             List<Map<String, Object>> models = (List<Map<String, Object>>) inner.get("models");
             for (Map<String, Object> mo : models) {
                 CodegenModel cm = (CodegenModel) mo.get("model");
-                if (cm.discriminator != null && cm.children != null) {
-                    for (CodegenModel child : cm.children) {
-                        this.setDiscriminatorValue(child, cm.discriminator.getPropertyName(), this.getDiscriminatorValue(child));
-                    }
+                if (cm.children != null) {
+                	if (cm.discriminator != null) {
+                		for (CodegenModel child : cm.children) {
+                            this.setDiscriminatorValue(child, cm.discriminator.getPropertyName(), this.getDiscriminatorValue(child));
+                        }	
+                	}
+                	for (CodegenModel child : cm.children) {
+                    	processParentPropertiesInChildModel(cm, child);	
+                	}                	
                 }
 
+                
+                cm.requiredVars.forEach(prop -> jctCustomFixes(prop, cm, allModels));
+                cm.optionalVars.forEach(prop -> jctCustomFixes(prop, cm, allModels));
+                cm.allVars.forEach(prop -> jctCustomFixes(prop, cm, allModels));
+                cm.vars.forEach(prop -> jctCustomFixes(prop, cm, allModels));
+                
                 // Add additional filename information for imports
                 mo.put("pyImports", toPyImports(cm, cm.imports));
             }
@@ -851,6 +928,18 @@ public class PythonAbstractConnexionServerCodegen extends DefaultCodegen impleme
 
     private void setDiscriminatorValue(CodegenModel model, String name, String value) {
         for (CodegenProperty prop : model.allVars) {
+            if (prop.name.equals(name)) {
+                prop.discriminatorValue = value;
+                prop.defaultValue = value;
+            }
+        }
+        for (CodegenProperty prop : model.vars) {
+            if (prop.name.equals(name)) {
+                prop.discriminatorValue = value;
+                prop.defaultValue = value;
+            }
+        }
+        for (CodegenProperty prop : model.requiredVars) {
             if (prop.name.equals(name)) {
                 prop.discriminatorValue = value;
                 prop.defaultValue = value;
@@ -881,6 +970,12 @@ public class PythonAbstractConnexionServerCodegen extends DefaultCodegen impleme
             }
         }
         return pyImports;
+    }
+    
+    @Override
+    protected void addAdditionPropertiesToCodeGenModel(CodegenModel codegenModel, Schema schema) {
+        codegenModel.additionalPropertiesType = getTypeDeclaration(ModelUtils.getAdditionalProperties(schema));
+        addImport(codegenModel, codegenModel.additionalPropertiesType);
     }
 
     @Override

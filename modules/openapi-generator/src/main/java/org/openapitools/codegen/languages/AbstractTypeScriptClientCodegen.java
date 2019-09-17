@@ -318,6 +318,15 @@ public abstract class AbstractTypeScriptClientCodegen extends DefaultCodegen imp
             return getSchemaType(p) + "<" + getTypeDeclaration(inner) + ">";
         } else if (ModelUtils.isMapSchema(p)) {
             Schema inner = ModelUtils.getAdditionalProperties(p);
+//            System.out.println("JCT ===");
+//            System.out.println(p);
+//            System.out.println(inner);
+//            if (null != p.getName() && p.getName().startsWith("extra")) {
+//            	return "{ [key: string]: " + getTypeDeclaration(inner) + "; }";
+//            }
+//            else {
+//                return "Map<string, " + getTypeDeclaration(inner) + ">";            	
+//            }
             return "{ [key: string]: " + getTypeDeclaration(inner) + "; }";
         } else if (ModelUtils.isFileSchema(p)) {
             return "any";
@@ -337,8 +346,8 @@ public abstract class AbstractTypeScriptClientCodegen extends DefaultCodegen imp
             return this.getSchemaType(p) + "<" + this.getParameterDataType(parameter, inner) + ">";
         } else if (ModelUtils.isMapSchema(p)) {
             inner = ModelUtils.getAdditionalProperties(p);
-//            return "{ [key: string]: " + this.getParameterDataType(parameter, inner) + "; }";
-            return "FOOOOOOOOOOOOOOOOOoooooooooooooooooooooo";
+            return "{ [key: string]: " + this.getParameterDataType(parameter, inner) + "; }";
+//            return "Map<string, " + getTypeDeclaration(inner) + "> /* A */";
         } else if (ModelUtils.isStringSchema(p)) {
             // Handle string enums
             if (p.getEnum() != null) {

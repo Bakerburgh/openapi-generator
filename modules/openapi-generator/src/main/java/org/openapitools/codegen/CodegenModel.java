@@ -221,6 +221,21 @@ public class CodegenModel {
                 parentVars);
     }
 
+    // ==== JCT CUSTOM START
+    public boolean hasOneOf() {
+    	return !this.oneOf.isEmpty();
+    }
+    
+    public boolean isFactory() {
+    	return !this.oneOf.isEmpty() && this.parentModel.getDiscriminator() != null;
+    }
+    
+    public CodegenDiscriminator getParentDiscriminator() {
+    	return this.parentModel.getDiscriminator();
+    }
+    
+    // ==== JCT CUSTOM END
+    
     public String getParent() {
         return parent;
     }

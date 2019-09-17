@@ -16,15 +16,19 @@
 
 package org.openapitools.codegen.templating;
 
-import com.samskivert.mustache.Mustache;
-import com.samskivert.mustache.Template;
-import org.openapitools.codegen.api.TemplatingEngineAdapter;
-import org.openapitools.codegen.api.TemplatingGenerator;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
+
+import org.openapitools.codegen.CodegenModel;
+import org.openapitools.codegen.api.TemplatingEngineAdapter;
+import org.openapitools.codegen.api.TemplatingGenerator;
+
+import com.samskivert.mustache.Mustache;
+import com.samskivert.mustache.Template;
 
 
 public class MustacheEngineAdapter implements TemplatingEngineAdapter {
@@ -50,6 +54,26 @@ public class MustacheEngineAdapter implements TemplatingEngineAdapter {
                 .defaultValue("")
                 .compile(generator.getFullTemplateContents(templateFile));
 
+//        if (templateFile.endsWith("model.mustache")) {
+//        	System.out.println("JCT ::: =================== " + templateFile);
+//            bundle.forEach((key, val) -> {
+//            	System.out.println(key + ": " + val.getClass());
+//            	if ("models".equals(key)) {
+//            		ArrayList<?> models = (ArrayList<?>) val;
+//            		models.forEach(hm -> {
+//            			HashMap<?, ?> mapped = (HashMap<?, ?>) hm;
+//            			CodegenModel model = (CodegenModel) mapped.get("model");
+//            			if (model.name == "AbstractNode" || model.name == "ConstantNode" || model.name == "Node") {
+//            				System.out.println(" >> " + model.classname);
+//            				System.out.println("       " + model.discriminator + " : " + model.getDiscriminatorName());
+//            			}      			
+//            			
+//            		});
+//            	}
+//            });	
+//        }
+        
+        
         return tmpl.execute(bundle);
     }
 
