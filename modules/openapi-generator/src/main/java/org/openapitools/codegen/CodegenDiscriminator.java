@@ -9,6 +9,7 @@ import java.util.Set;
 
 public class CodegenDiscriminator {
     private String propertyName;
+    private String baseName;
     private Map<String, String> mapping;
     private Set<MappedModel> mappedModels = new LinkedHashSet<>();
 
@@ -82,21 +83,31 @@ public class CodegenDiscriminator {
         if (o == null || getClass() != o.getClass()) return false;
         CodegenDiscriminator that = (CodegenDiscriminator) o;
         return Objects.equals(propertyName, that.propertyName) &&
+    		Objects.equals(baseName, that.baseName) &&
             Objects.equals(mapping, that.mapping) &&
             Objects.equals(mappedModels, that.mappedModels);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(propertyName, mapping, mappedModels);
+        return Objects.hash(propertyName, baseName, mapping, mappedModels);
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .append("propertyName", propertyName)
+                .append("baseName", baseName)                
                 .append("mapping", mapping)
                 .append("mappedModels", mappedModels)
                 .toString();
     }
+
+	public String getBaseName() {
+		return baseName;
+	}
+
+	public void setBaseName(String baseName) {
+		this.baseName = baseName;
+	}
 }

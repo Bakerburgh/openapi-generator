@@ -1936,7 +1936,10 @@ public class DefaultCodegen implements CodegenConfig {
             return null;
         }
         CodegenDiscriminator discriminator = new CodegenDiscriminator();
-        discriminator.setPropertyName(toVarName(schema.getDiscriminator().getPropertyName()));
+//        discriminator.setPropertyName(toVarName(schema.getDiscriminator().getPropertyName()));
+        String baseName = schema.getDiscriminator().getPropertyName();
+        discriminator.setBaseName(baseName);
+        discriminator.setPropertyName(toVarName(baseName));
         discriminator.setMapping(schema.getDiscriminator().getMapping());
         if (schema.getDiscriminator().getMapping() != null && !schema.getDiscriminator().getMapping().isEmpty()) {
             for (Entry<String, String> e : schema.getDiscriminator().getMapping().entrySet()) {
